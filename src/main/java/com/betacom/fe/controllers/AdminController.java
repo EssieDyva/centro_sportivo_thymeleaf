@@ -17,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.betacom.fe.dto.inputs.AttivitaReq;
 import com.betacom.fe.dto.outputs.AttivitaDTO;
+import com.betacom.fe.dto.outputs.UtenteDTO;
 import com.betacom.fe.response.Resp;
 
 import lombok.RequiredArgsConstructor;
@@ -82,6 +83,38 @@ public class AdminController {
 		}
 
 		return "redirect:/admin/listAttivita";
+		
+	}
+
+	@GetMapping("/listUtenti")
+	public ModelAndView listUtenti(Model model) {
+		ModelAndView mav = new ModelAndView("admin/listUtenti");
+		List<UtenteDTO> utenti = webclient.get()
+				 .uri(uriBuilder -> uriBuilder
+					    .path("utente/list")
+					    .build())
+					.retrieve()
+					.bodyToMono(new ParameterizedTypeReference<List<UtenteDTO>>() {})
+					.block();
+	
+		model.addAttribute("utenti", utenti);
+		return mav;
+	}
+
+	@GetMapping("removeUtente")
+	public Object removeUtente(@RequestParam (required = true) String username, RedirectAttributes ra) {
+		log.debug("removeUtente :" + username);
+
+		ResponseEntity<Resp> response = webclient.delete()
+				.uri("utente/delete/{username}", username)
+				.exchangeToMono(resp -> resp.toEntity(Resp.class) )
+				.block();
+
+		if (!response.getStatusCode().is2xxSuccessful()) {
+			 ra.addFlashAttribute("errorMsg", response.getBody().getMsg());
+		}
+
+		return "redirect:/admin/listUtenti";
 		
 	}
 	
